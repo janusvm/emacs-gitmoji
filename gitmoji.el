@@ -56,7 +56,7 @@ Reads emoji data if it hasn't been already or if FORCE is given."
                               (gethash "description" gitmoji)))
                     gitmojis)))))
 
-(defun gitmoji-completing-read (prompt &optional predicate require-match initial-input hist def inherit-input-method)
+(defun gitmoji-completing-read (prompt &optional initial-input)
   "Prompt for selecting an emoji and return the selected emoji."
   (gitmoji-set-emoji-data)
   (let ((emojify-minibuffer-reading-emojis-p t)
@@ -64,19 +64,27 @@ Reads emoji data if it hasn't been already or if FORCE is given."
     (substring (funcall completing-read-function
                         prompt
                         gitmoji-emojis
-                        predicate
-                        require-match
+                        nil
+                        nil
                         initial-input
-                        hist
-                        def
-                        inherit-input-method)
+                        nil
+                        nil
+                        nil)
                0 1)))
 
 ;;;###autoload
-(defun gitmoji-insert-emoji ()
-  "Interactively prompt for Gitmojis and insert them in the current buffer."
-  (interactive)
-  (insert (gitmoji-completing-read "Insert Gitmoji: ")))
+(defun gitmoji-insert-emoji (&optional beg end)
+  "Interactively prompt for Gitmojis and insert them in the current buffer.
+If the region is active, the selected text will be used as the initial input for the completing read and replaced by the selected Gitmoji."
+  (interactive (if (use-region-p)
+                   (list (region-beginning) (region-end))
+                 (list nil nil)))
+  (if (and beg end)
+      (let* ((initial-input (buffer-substring-no-properties beg end))
+             (selected-gitmoji (gitmoji-completing-read "Insert Gitmoji: " initial-input)))
+        (kill-region beg end)
+        (insert selected-gitmoji))
+    (insert (gitmoji-completing-read "Insert Gitmoji: "))))
 
 (provide 'gitmoji)
 ;;; gitmoji.el ends here
